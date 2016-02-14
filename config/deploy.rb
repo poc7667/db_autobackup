@@ -1,6 +1,5 @@
 # config valid only for current version of Capistrano
 lock '3.4.0'
-binding.pry
 
 set :application, ENV['APP_NAME']
 set :repo_url, ENV['GIT_REPO']
@@ -8,7 +7,7 @@ set :format, :pretty
 set :keep_releases, 2
 
 # deploy 的資料夾位置 (prodution)
-set :deploy_to, ENV["PROJECT_PATH"]
+set :deploy_to, ENV["DEPLOYER_HOME"] || "/tmp"
 set :branch, ENV["BRANCH"] || `git rev-parse --abbrev-ref HEAD`.chop
 
 set :user, ENV['DEPLOYER']

@@ -7,3 +7,4 @@ group :development, :test do
   gem 'capistrano-puma',  require: false
   gem 'capistrano-file-permissions'
 end
+gem 'whenever', require: false
