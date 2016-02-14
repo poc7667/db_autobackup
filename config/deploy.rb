@@ -5,6 +5,7 @@ set :application, ENV['APP_NAME']
 set :repo_url, ENV['GIT_REPO']
 set :format, :pretty
 set :keep_releases, 2
+set :local_project_path, Dir.pwd
 
 # deploy 的資料夾位置 (prodution)
 set :deploy_to, ENV["DEPLOYER_HOME"] || "/tmp"
@@ -13,7 +14,7 @@ set :branch, ENV["BRANCH"] || `git rev-parse --abbrev-ref HEAD`.chop
 set :user, ENV['DEPLOYER']
 set :use_sudo, false
 # rbenv 的設定
-set :rbenv_type, :user 
+set :rbenv_type, :user
 
 set :rbenv_ruby, "2.2.2"
 set :rbenv_path, ENV['RBENV_PATH']
@@ -27,10 +28,16 @@ set :default_environment, {
   'PATH' => "$HOME/.rbenv/shims:$HOME/.rbenv/bin:$HOME/bin:$HOME/local/bin:$PATH"
 }
 set :git_strategy, proc { GitDeployBranchStrategy.setup! }
-namespace :deploy do
 
+namespace :deploy do
+   task :upload do
+      on roles(:all) do |host|
+         upload! "#{fetch(:local_project_path)}/.env", "#{fetch(:deploy_to)}/current/.env"
+      end
+   end
 end
 
+before 'deploy:published', 'deploy:upload'
 
 module GitDeployBranchStrategy
   def self.setup!
