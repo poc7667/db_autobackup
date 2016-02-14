@@ -30,14 +30,21 @@ set :default_environment, {
 set :git_strategy, proc { GitDeployBranchStrategy.setup! }
 
 namespace :deploy do
-   task :upload do
+   task :after_setup do
       on roles(:all) do |host|
          upload! "#{fetch(:local_project_path)}/.env", "#{fetch(:deploy_to)}/current/.env"
+
       end
+
+    on roles(:db) do
+      within current_path do
+        execute ". $HOME/.profile && whenever  -f config/schedule.rb -w ", raise_on_non_zero_exit: false
+      end
+    end
    end
 end
 
-before 'deploy:published', 'deploy:upload'
+before 'deploy:published', 'deploy:after_setup'
 
 module GitDeployBranchStrategy
   def self.setup!
