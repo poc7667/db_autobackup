@@ -26,7 +26,24 @@ set :default_env, { path: "~/.rbenv/shims:~/.rbenv/bin:$PATH" }
 set :default_environment, {
   'PATH' => "$HOME/.rbenv/shims:$HOME/.rbenv/bin:$HOME/bin:$HOME/local/bin:$PATH"
 }
-
+set :git_strategy, proc { GitDeployBranchStrategy.setup! }
 namespace :deploy do
 
+end
+
+
+module GitDeployBranchStrategy
+  def self.setup!
+    include Capistrano::Git::DefaultStrategy
+    return self
+  end
+
+  def release
+    relative_release_path = release_path.relative_path_from(Pathname.new(context.capture(:pwd)))
+    context.within(relative_release_path) do
+      git :clone, '--mirror', repo_path, File.join(release_path, '.git')
+      git '--work-tree', release_path, 'config --local --bool core.bare false'
+      git :checkout, '-B', fetch(:deploy_branch, :deploy), fetch_revision, '--no-track'
+    end
+  end
 end
