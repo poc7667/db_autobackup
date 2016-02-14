@@ -1,6 +1,5 @@
 # config valid only for current version of Capistrano
 lock '3.4.0'
-binding.pry
 
 set :application, ENV['APP_NAME']
 set :repo_url, ENV['GIT_REPO']
@@ -8,7 +7,7 @@ set :format, :pretty
 set :keep_releases, 2
 
 # deploy 的資料夾位置 (prodution)
-set :deploy_to, ENV["PROJECT_PATH"]
+set :deploy_to, ENV["DEPLOYER_HOME"] || "/tmp"
 set :branch, ENV["BRANCH"] || `git rev-parse --abbrev-ref HEAD`.chop
 
 set :user, ENV['DEPLOYER']
@@ -27,7 +26,24 @@ set :default_env, { path: "~/.rbenv/shims:~/.rbenv/bin:$PATH" }
 set :default_environment, {
   'PATH' => "$HOME/.rbenv/shims:$HOME/.rbenv/bin:$HOME/bin:$HOME/local/bin:$PATH"
 }
-
+set :git_strategy, proc { GitDeployBranchStrategy.setup! }
 namespace :deploy do
 
+end
+
+
+module GitDeployBranchStrategy
+  def self.setup!
+    include Capistrano::Git::DefaultStrategy
+    return self
+  end
+
+  def release
+    relative_release_path = release_path.relative_path_from(Pathname.new(context.capture(:pwd)))
+    context.within(relative_release_path) do
+      git :clone, '--mirror', repo_path, File.join(release_path, '.git')
+      git '--work-tree', release_path, 'config --local --bool core.bare false'
+      git :checkout, '-B', fetch(:deploy_branch, :deploy), fetch_revision, '--no-track'
+    end
+  end
 end
